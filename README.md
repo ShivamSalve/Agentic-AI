@@ -10,26 +10,29 @@ Article → Claim Extractor → Evidence Retriever → Verdict Agent → Reviewe
 
 ## 1. Setup (10 minutes)
 
-**Requirements:** Python 3.10+ and an internet connection.
+**Requirements:** Python 3.10+, Ollama, and an internet connection for web evidence searches.
 
 ```bash
 # 1. Go into the project folder, then install packages
 pip install -r requirements.txt
 
-# 2. Create your config file
+# 2. Install Ollama from https://ollama.com/download
+#    Then download the default model:
+ollama pull llama3.2
+
+# 3. Create your config file
 copy .env.example .env        # Windows
 cp .env.example .env          # Mac / Linux
 
-# 3. Get a FREE API key and paste it into .env (as LLM_API_KEY)
-#    Groq   : https://console.groq.com/keys
-#    Gemini : https://aistudio.google.com/apikey   (see .env.example for its URL/model lines)
-
-# 4. Run the web app
+# 4. Ensure Ollama is running, then launch the app
 streamlit run app.py
 ```
 
-> **No key yet?** Set `MOCK_MODE=1` in `.env` to try the interface without API calls. Mock results and the example source are artificial; do not treat them as fact-checks. Evaluation is disabled in mock mode.
-> **Model errors?** Free-tier model names change from time to time — check your provider's model list and update `LLM_MODEL` in `.env`.
+Ollama runs locally at `http://localhost:11434` by default and needs no API key. Choose **Ask Ollama** to generate a response to your own question or custom prompt. Choose **Fact-check a claim/article** to run the multi-agent evidence workflow on your own text; web evidence search requires internet access.
+
+> Set `MOCK_MODE=1` in `.env` to try the interface with artificial responses and sources. Mock output is not a real answer or fact-check.
+> To use another Ollama model, pull it with `ollama pull <model-name>` and set `LLM_MODEL` to that model name in `.env`.
+> If Ollama reports GPU/CUDA out-of-memory errors, try a smaller model. On Windows, you can run a CPU-only server from a separate PowerShell window with `$env:OLLAMA_HOST='127.0.0.1:11435'; $env:OLLAMA_LLM_LIBRARY='cpu'; ollama serve`, then set `LLM_BASE_URL=http://127.0.0.1:11435/v1` in `.env`.
 
 ## 2. Files
 
@@ -69,7 +72,8 @@ streamlit run app.py
 
 ## 6. Troubleshooting
 
-- *"No LLM_API_KEY found"* → you haven't created `.env` or the key line is empty.
+- *Ollama memory/CUDA error* → use a smaller model or the CPU-only server command above.
+- *"Connection error" with Ollama* → make sure Ollama is running and the model is downloaded (`ollama list`).
 - *Everything is "Unverified"* → no relevant search results were available. Check your connection and try again.
 - *Rate-limit errors from the LLM* → free tiers have limits; wait or use fewer claims.
 - Run the focused tests with `python -m unittest discover -s tests`.

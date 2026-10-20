@@ -3,7 +3,7 @@ import os
 
 import streamlit as st
 
-from agents import AgentError, MOCK
+from agents import AgentError, LLM_PROVIDER, MOCK, MODEL, generate_answer
 from workflow import NODE_LABELS, build_graph
 
 st.set_page_config(page_title="Fake News Detector - Agentic AI", page_icon="📰", layout="wide")
@@ -12,10 +12,32 @@ st.caption("A multi-agent system: Claim Extractor → Evidence Retriever → Ver
 
 if MOCK:
     st.info("MOCK MODE is ON - no real AI is used. Set MOCK_MODE=0 in your .env file for real results.")
-elif not os.getenv("LLM_API_KEY", "").strip() or os.getenv("LLM_API_KEY", "").strip().lower() in {
-    "paste_your_key_here", "your_api_key",
-}:
+elif LLM_PROVIDER != "ollama" and (
+    not os.getenv("LLM_API_KEY", "").strip()
+    or os.getenv("LLM_API_KEY", "").strip().lower() in {"paste_your_key_here", "your_api_key"}
+):
     st.error("No LLM_API_KEY found. Copy `.env.example` to `.env` and add your API key.")
+    st.stop()
+
+if not MOCK:
+    st.caption(f"Model provider: {LLM_PROVIDER} | Model: {MODEL}")
+
+mode = st.radio("What would you like to do?", ["Fact-check a claim/article", "Ask Ollama"], horizontal=True)
+if mode == "Ask Ollama":
+    prompt = st.text_area(
+        "Your question or custom prompt",
+        key="custom_prompt",
+        height=150,
+        placeholder="Ask a question, or paste text and say what you want to know...",
+    )
+    if st.button("💬 Generate answer", type="primary", disabled=not prompt.strip()):
+        try:
+            with st.spinner("Ollama is generating an answer..."):
+                answer = generate_answer(prompt)
+            st.subheader("Answer")
+            st.write(answer)
+        except AgentError as e:
+            st.error(str(e))
     st.stop()
 
 EXAMPLES = {
